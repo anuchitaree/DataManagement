@@ -1,4 +1,5 @@
 using DataManagement;
+using DataManagement.Workers;
 
 namespace Company.WebApplication1
 {
@@ -9,7 +10,7 @@ namespace Company.WebApplication1
             IHost host = Host.CreateDefaultBuilder(args)
                 .ConfigureServices(services =>
                 {
-                    services.AddHostedService<Worker>();
+                    services.AddHostedService<ScheduleClean>();
                 })
                 .Build();
 
