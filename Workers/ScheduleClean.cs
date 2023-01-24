@@ -1,4 +1,6 @@
-﻿namespace DataManagement.Workers
+﻿using System.Net.NetworkInformation;
+
+namespace DataManagement.Workers
 {
     public class ScheduleClean : BackgroundService
     {
@@ -14,7 +16,7 @@
 
         private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
-        public ScheduleClean(IHostApplicationLifetime hostApplicationLifetime, 
+        public ScheduleClean(IHostApplicationLifetime hostApplicationLifetime,
             ILogger<ScheduleClean> logger, IConfiguration configuration)
         {
             _configuration = configuration;
@@ -36,29 +38,26 @@
 
         protected async override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            //DateTime constDay = new DateTime(2023, 1, 1, 19, 15, 0);
-            //int lastDay = (DateTime.Now - constDay).Days - 1;
-
-            int lastMintue = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
-
-            while (!stoppingToken.IsCancellationRequested && _isDelete==true)
+            int setMinute = _deleteAtHour * 60 + _deleteAtMinute;
+            int lastDay = DateTime.Now.Day - 1;
+            while (!stoppingToken.IsCancellationRequested && _isDelete == true)
             {
                 try
                 {
-                    //var aTimer = new System.Timers.Timer(1000);
-                    //int currDay = (DateTime.Now - constDay).Days;
-                    //if (lastDay < currDay)
-                    //{
-                    //    lastDay = currDay;
+                    int nowDay = DateTime.Now.Day;
+
+                    int nowMintue = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
+                    if (lastDay != nowDay && nowMintue > setMinute)
+                    {
+                        lastDay = nowDay;
+                        Proceesing();
+                    }
 
 
-                    //    //Proceesing();
-
-                    //}
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("The Website is down.{mess}", ex.Message);
+                    _logger.LogError($"The Website is down.{ex.Message}");
                 }
 
 
@@ -165,7 +164,7 @@
                 await Task.Delay(5000);
             }
 
-            if((_deleteAtHour >= 0 && _deleteAtHour <24 )&& (_deleteAtMinute>=0 &&  _deleteAtMinute < 60))
+            if ((_deleteAtHour >= 0 && _deleteAtHour < 24) && (_deleteAtMinute >= 0 && _deleteAtMinute < 60))
             {
 
             }
@@ -176,6 +175,9 @@
                 _hostApplicationLifetime.StopApplication();
                 await Task.Delay(5000);
             }
+
+
+      
         }
     }
 }

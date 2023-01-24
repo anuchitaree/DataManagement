@@ -1,0 +1,37 @@
+﻿
+D: |-- picture_Backup |-- Wrong_judgement |-- 01-01-2022 |-- RB01  |-- NG_xxxxxx.bmp
+   |                  |                   |              |         |-- NG_xxxxxx.bmp
+   |                  |                   |              |
+   |                  |                   |              |-- RB02  |-- NG_xxxxxx.bmp
+   |                  |                   |                        |-- NG_xxxxxx.bmp
+   |                  |                   | 
+   |                  |                   |-- 02-01-2022 |-- RB01  |-- NG_xxxxxx.bmp
+   |                  |                                  |         |-- NG_xxxxxx.bmp
+   |                  |                                  |
+   |                  |                                  |-- RB03  |-- NG_xxxxxx.bmp
+   |                  |                                            |-- NG_xxxxxx.bmp
+   |                  |                   
+   |                  |
+   |                  |-- RB01  |-- 010  |-- 01-01-2022 |-- OK_xxxxxxxxx.bmp
+   |                  |         |        |              |-- OK_xxxxxxxxx.bmp
+   |                  |         |        |              |-- NG_xxxxxxxxx.bmp
+   |                  |         |        |
+   |                  |         |        |-- 02-01-2022 |-- OK_xxxxxxxxx.bmp
+   |                  |         |                       |-- OK_xxxxxxxxx.bmp
+   |                  |         |                       |-- NG_xxxxxxxxx.bmp
+   |                  |         |
+   |                  |         |-- 011  -- 01-01-2022 |-- OK_xxxxxxxxx.bmp
+   |                  |                                |-- OK_xxxxxxxxx.bmp
+   |                  |                                |-- NG_xxxxxxxxx.bmp
+   |                  |
+   |                  |-- RB02  |-- 020  |-- 01-01-2022 |-- OK_xxxxxxxxx.bmp
+   |                            |        |              |-- OK_xxxxxxxxx.bmp
+   |                            |        |              |-- NG_xxxxxxxxx.bmp
+   |                            |        |
+   |                            |        |-- 02-01-2022 |-- OK_xxxxxxxxx.bmp
+   |                            |                       |-- OK_xxxxxxxxx.bmp
+   |                            |                       |-- NG_xxxxxxxxx.bmp
+   |                            |
+   |                            |-- 025  |-- 01-01-2022 |-- OK_xxxxxxxxx.bmp
+   |                                                    |-- OK_xxxxxxxxx.bmp
+   |                                                    |-- NG_xxxxxxxxx.bmp
