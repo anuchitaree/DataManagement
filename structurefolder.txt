@@ -35,3 +35,12 @@ D: |-- picture_Backup |-- Wrong_judgement |-- 01-01-2022 |-- RB01  |-- NG_xxxxxx
    |                            |-- 025  |-- 01-01-2022 |-- OK_xxxxxxxxx.bmp
    |                                                    |-- OK_xxxxxxxxx.bmp
    |                                                    |-- NG_xxxxxxxxx.bmp
+
+
+DeleteAt:
+	DayOfWeek=> 0:Sun,1:Mon,2:Tue,3:Wed,4:Thu,5:Fri,6:Sat,7:Everyday
+	Hour => 0 to 23
+	Minute => 0 to 59
+
+PeriodDays => 0 to 5000
+isDeleted => true:delete , false:no delete

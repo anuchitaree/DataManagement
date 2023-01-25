@@ -1,23 +1,24 @@
-﻿using System.Net.NetworkInformation;
-
-namespace DataManagement.Workers
+﻿namespace DataManagement.Workers
 {
-    public class ScheduleClean : BackgroundService
+    public class CleanWorker : BackgroundService
     {
         private readonly IConfiguration _configuration;
-        private readonly ILogger<ScheduleClean> _logger;
+        private readonly ILogger<CleanWorker> _logger;
+
         private string _destinationPath1 = null!;
         private string _destinationPath2 = null!;
-        private int _periodDays = 0;
+
+        private int _deleteAtDayOfWeek = 0;
         private int _deleteAtHour = 0;
         private int _deleteAtMinute = 0;
 
+        private int _periodDays = 0;
         private Boolean _isDelete = false;
 
         private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
-        public ScheduleClean(IHostApplicationLifetime hostApplicationLifetime,
-            ILogger<ScheduleClean> logger, IConfiguration configuration)
+        public CleanWorker(IHostApplicationLifetime hostApplicationLifetime,
+            ILogger<CleanWorker> logger, IConfiguration configuration)
         {
             _configuration = configuration;
             _logger = logger;
@@ -40,16 +41,24 @@ namespace DataManagement.Workers
         {
             int setMinute = _deleteAtHour * 60 + _deleteAtMinute;
             int lastDay = DateTime.Now.Day - 1;
+
             while (!stoppingToken.IsCancellationRequested && _isDelete == true)
             {
                 try
                 {
+                    var dayOfWeek = (int)DateTime.Now.DayOfWeek;
+
+                    bool resultday = dayOfWeek == _deleteAtDayOfWeek || _deleteAtDayOfWeek == 8;
+
+
                     int nowDay = DateTime.Now.Day;
 
                     int nowMintue = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
-                    if (lastDay != nowDay && nowMintue > setMinute)
+
+                    if (lastDay != nowDay && nowMintue > setMinute && resultday)
                     {
                         lastDay = nowDay;
+
                         Proceesing();
                     }
 
@@ -142,10 +151,12 @@ namespace DataManagement.Workers
         {
             _destinationPath1 = _configuration.GetValue<string>("DestinationPath:Path1");
             _destinationPath2 = _configuration.GetValue<string>("DestinationPath:Path2");
-            _periodDays = _configuration.GetValue<int>("PeriodDays");
+
+            _deleteAtDayOfWeek = _configuration.GetValue<int>("DeleteAt:DayOfWeek");
             _deleteAtHour = _configuration.GetValue<int>("DeleteAt:Hour");
             _deleteAtMinute = _configuration.GetValue<int>("DeleteAt:Minute");
 
+            _periodDays = _configuration.GetValue<int>("PeriodDays");
             _isDelete = _configuration.GetValue<bool>("isDeleted");
 
 
@@ -164,20 +175,39 @@ namespace DataManagement.Workers
                 await Task.Delay(5000);
             }
 
-            if ((_deleteAtHour >= 0 && _deleteAtHour < 24) && (_deleteAtMinute >= 0 && _deleteAtMinute < 60))
+            bool isDayOfWeek = _deleteAtDayOfWeek >= 0 && _deleteAtDayOfWeek <= 8;
+            if (!isDayOfWeek)
             {
-
+                _logger.LogError($" Day of week to delete file : 0 to 8");
+                _logger.LogCritical("Exiting application...");
+                _hostApplicationLifetime.StopApplication();
+                await Task.Delay(5000);
             }
-            else
+            bool isHour = _deleteAtHour >= 0 && _deleteAtHour < 24;
+            if (!isHour)
             {
-                _logger.LogError($" Hour : 0 - 23 , Minute : 0 - 59 ");
+                _logger.LogError($" Hour : 0 to 23");
+                _logger.LogCritical("Exiting application...");
+                _hostApplicationLifetime.StopApplication();
+                await Task.Delay(5000);
+            }
+            bool isMinute = _deleteAtMinute >= 0 && _deleteAtMinute < 60;
+            if (!isMinute)
+            {
+                _logger.LogError($" Minute : 0 to 59");
                 _logger.LogCritical("Exiting application...");
                 _hostApplicationLifetime.StopApplication();
                 await Task.Delay(5000);
             }
 
+            //=============== license protect =============//
+            DateTime setDate = new DateTime(2023, 3, 1, 0, 0, 0);
+            if (DateTime.Now > setDate)
+            {
+                _logger.LogCritical("Exiting application...");
+                _hostApplicationLifetime.StopApplication();
+            }
 
-      
         }
     }
 }
