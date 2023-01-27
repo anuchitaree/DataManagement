@@ -1,4 +1,13 @@
 ﻿
+D: |-- picture_Backup |-- RB01  |-- 508  |-- OK-RB01-508-xx xxx xxx x_20210502_124817.jpg
+   |                  |         |        |-- NG-RB01-508-xxx xx xxxx_20210502_152326.jpg
+   |                  |         |        |
+
+
+
+
+
+
 D: |-- picture_Backup |-- Wrong_judgement |-- 01-01-2022 |-- RB01  |-- NG_xxxxxx.bmp
    |                  |                   |              |         |-- NG_xxxxxx.bmp
    |                  |                   |              |
