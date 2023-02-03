@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using DataManagement.Models;
+using System.Net.NetworkInformation;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DataManagement.Workers
 {
@@ -20,6 +18,7 @@ namespace DataManagement.Workers
 
         private int _periodDays = 0;
         private Boolean _isDelete = false;
+        private string _productNumber = null!;
 
         private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
@@ -81,7 +80,7 @@ namespace DataManagement.Workers
             }
         }
 
-        private  void Proceesing()
+        private void Proceesing()
         {
             var deldate = DateTime.Now.AddDays(-_periodDays);
             //var datepoint = new DateTime(deldate.Year, deldate.Month, deldate.Day, 0, 0, 0);
@@ -98,31 +97,97 @@ namespace DataManagement.Workers
                         {
 
                             //D:\picture_Backup\RB01\010\OK-RB01-508-xx xxx xxx x_20210502_124817.jpg
-                            string[] filerecords = Directory.GetFiles(job); 
+                            //==== List file and arrange file in record sheet ====//
+                            List<Destination> keepfiles = new List<Destination>();
+
+                            string[] filerecords = Directory.GetFiles(job);
 
                             foreach (var backupFile in filerecords)//
                             {
-                                var fileName = backupFile.Split('\\');  // OK-RB01-508-xx xxx xxx x_20210502_124817.jpg
-                                if (fileName.Length == 5)
+                                var fileNameExtension = backupFile.Split('\\');  // OK-RB01-508-xx xxx xxx x_20210502_124817.jpg
+
+                                if (fileNameExtension.Length == 5)
                                 {
-                                    int length = fileName[4].Length;
-                                    string yyyyMMdd_HHmmss = fileName[4].Substring(length-15, 15);
+                                    var fileName = fileNameExtension[4].Split('.');
+                                    if (fileName.Length == 2)
+                                    {
+                                        int length = fileName[0].Length;
+                                        string yyyyMMdd_HHmmss = fileName[0].Substring(length - 15, 15); //20210502_124817
 
-                                    int yyyy = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(0,2));
-                                    int MM = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(2, 2));
-                                    int dd = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(4, 2));
-                                    int HH= Convert.ToInt32(yyyyMMdd_HHmmss.Substring(7, 2));
-                                    int mm = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(9, 2));
-                                    int ss = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(11, 2));
+                                        string yyyyStr = yyyyMMdd_HHmmss.Substring(0, 4);
+                                        string MMStr = yyyyMMdd_HHmmss.Substring(4, 2);
+                                        string ddStr = yyyyMMdd_HHmmss.Substring(6, 2);
 
-                                    DateTime fileDate = new DateTime(yyyy, MM, dd, HH, mm, ss);
+                                        int yyyy = Convert.ToInt32(yyyyStr);
+                                        int MM = Convert.ToInt32(MMStr);
+                                        int dd = Convert.ToInt32(ddStr);
+
+                                        int HH = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(9, 2));
+                                        int mm = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(11, 2));
+                                        int ss = Convert.ToInt32(yyyyMMdd_HHmmss.Substring(13, 2));
+
+                                        DateTime fileDate = new DateTime(yyyy, MM, dd, HH, mm, ss);
+
+                                        DateTime registerDate = FindRegistDate(fileDate);
 
 
-                                  
+                                        keepfiles.Add(new Destination
+                                        {
+                                            SourceFile = backupFile,  //D:\picture_Backup\RB01\010\OK-RB01-508-xx xxx xxx x_20210502_124817.jpg
+                                            FolderName = $"{job}\\{registerDate.ToString("dd-MM-yyyy")}",  // 01-05-2023
+                                            DestinationFile = $"{job}\\{registerDate.ToString("dd-MM-yyyy")}\\{fileNameExtension[4]}",
+                                        });
+
+                                    }
+
                                 }
                             }
 
+                            //==== making a folder ====//
+                            var groupfoldername = keepfiles.GroupBy(x => x.FolderName)
+                                .Select(x=>new Destination
+                                {
+                                    FolderName= x.Key,
+                                }).ToList();
+
+                            foreach (var i in groupfoldername)
+                            {
+                                string newfolder = i.FolderName;
+
+                                if (!Directory.Exists(newfolder))
+                                {
+                                    Directory.CreateDirectory(newfolder);
+                                }
+                            }
+
+                            //===== push file into folder ====//
+                            try
+                            {
+                               
+                                foreach (var file in keepfiles)
+                                {
+                                    File.Copy(file.SourceFile, file.DestinationFile, true);
+
+                                    if (File.Exists(file.DestinationFile))
+                                    {
+                                        File.Delete(file.SourceFile);
+                                    }
+                                }
+
+                            }
+                            catch 
+                            {
+
+                            }
+
                         }
+
+
+
+
+
+
+
                     }
                 }
             }
@@ -132,6 +197,9 @@ namespace DataManagement.Workers
         }
         private async void Initialize()
         {
+            
+
+            //==================================//
             _destinationPath1 = _configuration.GetValue<string>("DestinationPath:Path1");
             _destinationPath2 = _configuration.GetValue<string>("DestinationPath:Path2");
 
@@ -142,6 +210,15 @@ namespace DataManagement.Workers
             _periodDays = _configuration.GetValue<int>("PeriodDays");
             _isDelete = _configuration.GetValue<bool>("isDeleted");
 
+            _productNumber = _configuration.GetValue<string>("ProductNumber");
+
+            //==================================//
+            if (!IsLicensed())
+            {
+                _logger.LogCritical("Exiting application...");
+                _hostApplicationLifetime.StopApplication();
+                await Task.Delay(5000);
+            }
 
             if (!Directory.Exists(_destinationPath1))
             {
@@ -191,6 +268,49 @@ namespace DataManagement.Workers
                 _hostApplicationLifetime.StopApplication();
             }
 
+        }
+
+
+        private DateTime FindRegistDate(DateTime startnow)
+        {
+            int yy = startnow.Year;
+            int mm = startnow.Month;
+            int dd = startnow.Day;
+
+            DateTime LimitTime = new(yy, mm, dd, 07, 30, 00);
+            int timecompare = Convert.ToInt32((LimitTime - startnow).TotalSeconds);
+
+            DateTime newDate = new(yy, mm, dd, 0, 0, 0);
+            if (timecompare > 0)
+            {
+                newDate = newDate.AddDays(-1);
+            }
+            return newDate;
+        }
+
+
+        private bool IsLicensed()
+        {
+            string macAddress = GetMACAddress();
+
+            string aa = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{macAddress}"));
+
+            return true;
+        }
+
+        public string GetMACAddress()
+        {
+            NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
+            String sMacAddress = string.Empty;
+            foreach (NetworkInterface adapter in nics)
+            {
+                if (sMacAddress == String.Empty)// only return MAC Address from first card
+                {
+                    IPInterfaceProperties properties = adapter.GetIPProperties();
+                    sMacAddress = adapter.GetPhysicalAddress().ToString();
+                }
+            }
+            return sMacAddress;
         }
 
     }

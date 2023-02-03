@@ -10,7 +10,8 @@ namespace Company.WebApplication1
             IHost host = Host.CreateDefaultBuilder(args)
                 .ConfigureServices(services =>
                 {
-                    services.AddHostedService<CleanWorker>();
+                    //services.AddHostedService<CleanWorker>();
+                    services.AddHostedService<ManageWorker>();
                 })
                 .Build();
 
